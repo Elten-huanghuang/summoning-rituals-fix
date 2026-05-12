@@ -1,0 +1,29 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+## Mixin 开关放在这里最清晰
+#[[mixins]]
+#config="${mod_id}.mixins.json"
+
+[[mods]]
+modId="srfix"  # 直接写你的 mod_id 实际值
+version="1.0.0"        # 直接写实际版本号
+displayName="Summoning Rituals Fix"
+authors="huanghuang"
+description='''A fix and tweak mod for Summoning Rituals.'''
+
+# 基础依赖：这是你报错的地方，必须改成明确的字符串
+[[dependencies.srfix]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.srfix]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"

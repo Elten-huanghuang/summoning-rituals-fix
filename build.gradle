@@ -1,0 +1,166 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    // 1. 开启 Mixin 插件
+    id 'org.spongepowered.mixin' version '0.7.+'
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+// 2. Mixin 核心配置：定义你的混淆映射和配置文件
+mixin {
+    // 这里的 refmap 名字建议保持一致
+    add sourceSets.main, "${mod_id}.refmap.json"
+    // 这行已经足够让 IDE 和 编译器 识别 Mixin 了
+     config "${mod_id}.mixins.json"
+}
+
+println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
+
+minecraft {
+    mappings channel: mapping_channel, version: mapping_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            // 注意是 jvmArgs (复数)，多个参数用逗号隔开
+            jvmArgs '-Xmx6G', '-Xms4G'
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            // 下面这三行是针对 Mixin 的补充
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMap', "${mod_id}.refmap.json"  // 指定映射表
+            property 'mixin.configs', "${mod_id}.mixins.json"     // 💥最关键：强制开发环境加载你的 Mixin 配置
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            // 服务端最好也配上，方便以后测联机 Bug
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMap', "${mod_id}.refmap.json"
+            property 'mixin.configs', "${mod_id}.mixins.json"
+            args '--nogui'
+        }
+
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        data {
+            workingDirectory project.file('run-data')
+            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    // 1. 阿里云镜像：极速下载各种通用 Java 依赖库
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+
+    // 2. BMCL 镜像：专门针对 Minecraft 的国内加速，下载游戏资源和 Forge 核心全靠它
+    maven { url 'https://bmclapi2.bangbang93.com/maven' }
+
+    // 3. Sponge 官方：如果你用了 Mixin，这个仓库能确保相关补丁工具下载成功
+    maven { url 'https://repo.spongepowered.org/repository/maven-public/' }
+
+    // 4. Forge 官方：虽然慢，但建议作为兜底方案放在最后
+    maven { url 'https://maven.minecraftforge.net/' }
+
+    // 5. 本地 libs 文件夹：你那堆勇者之章的 JAR 包就靠它识别
+    flatDir {
+        dir 'libs'
+    }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+
+
+    // 1. 定义你想要批量加载的 JAR 包列表（不需要写 .jar 后缀）
+    def mod_dependencies = [
+            "touhoulittlemaid:1.5.0-forge+mc1.20.1-release",
+            "summoningrituals:forge-1.20.1-2.0.8"
+    ]
+
+    // 2. 循环处理列表，自动添加组名并触发反混淆
+    mod_dependencies.each { dependency ->
+        implementation fg.deobf("local:${dependency}")
+    }
+    // 5. Mixin 注解处理器，让 IDEA 能识别你的代码
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
+            forge_version: forge_version, forge_version_range: forge_version_range,
+            loader_version_range: loader_version_range,
+            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+            mod_authors: mod_authors, mod_description: mod_description,
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : mod_authors,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                // 6. 在生成的 JAR 里声明 Mixin 配置
+                'MixinConfigs': "${mod_id}.mixins.json"
+        ])
+    }
+    finalizedBy 'reobfJar'
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/mcmodsrepo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

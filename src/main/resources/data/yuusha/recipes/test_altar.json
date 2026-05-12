@@ -1,0 +1,27 @@
+{
+  "type": "summoningrituals:altar",
+  "catalyst": {
+    "item": "touhou_little_maid:hakurei_gohei"
+  },
+  "inputs": [
+    {
+      "ingredient": { "item": "minecraft:diamond" },
+      "count": 1
+    },
+    {
+      "ingredient": { "item": "minecraft:iron_ingot" },
+      "count": 1
+    }
+  ],
+  "outputs": [
+    {
+      "mob": "minecraft:sheep",
+      "count": 1,
+      "notification": "测试召唤成功！已召唤出一只羊！"
+    },
+    {
+      "item": "touhou_little_maid:hakurei_gohei"
+    }
+  ],
+  "recipe_time": 10
+}
