@@ -6,6 +6,7 @@
   "refmap": "srfix.refmap.json",
   "mixins": [
     "AltarBlockEntityMixin",
+    "AltarInventoryMixin",
     "GameModeMixin"
   ],
   "injectors": {
