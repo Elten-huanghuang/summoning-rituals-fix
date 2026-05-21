@@ -258,12 +258,18 @@ public abstract class AltarBlockEntityMixin extends PlatformBlockEntity implemen
             }
             // ---- 手持物品 ----
             else {
-                // 黑名单检查
+                // 黑名单物品：当作空手处理（提取/召唤）
                 if (!com.huanghuang.SRfix.util.SRfixConfig.isAllowed(stack)) {
-                    player.displayClientMessage(
-                            net.minecraft.network.chat.Component.literal("祭坛排斥了这件物品！").withStyle(net.minecraft.ChatFormatting.RED),
-                            true
-                    );
+                    if (player.isShiftKeyDown()) {
+                        this.inventory.popLastInserted();
+                        this.yuusha$sync();
+                    } else if (!this.yuusha$isAutoMode) {
+                        AltarRecipe recipe = this.findRecipe();
+                        if (recipe != null) {
+                            this.handleSummoning(recipe, player);
+                            this.yuusha$sync();
+                        }
+                    }
                     cir.setReturnValue(stack);
                     return;
                 }

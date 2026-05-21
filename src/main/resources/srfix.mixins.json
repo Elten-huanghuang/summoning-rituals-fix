@@ -9,6 +9,9 @@
     "AltarInventoryMixin",
     "GameModeMixin"
   ],
+  "client": [
+    "AltarRendererMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   }
