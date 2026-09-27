@@ -271,23 +271,7 @@ public abstract class AltarBlockEntityMixin extends PlatformBlockEntity implemen
             }
             // ---- 手持物品 ----
             else {
-                // 黑名单物品：当作空手处理（提取/召唤）
-                if (!com.huanghuang.SRfix.util.SRfixConfig.isAllowed(stack)) {
-                    if (player.isShiftKeyDown()) {
-                        this.inventory.popLastInserted();
-                        this.huanghuang$sync();
-                    } else if (!this.huanghuang$isAutoMode) {
-                        AltarRecipe recipe = this.findRecipe();
-                        if (recipe != null) {
-                            this.handleSummoning(recipe, player);
-                            this.huanghuang$sync();
-                        }
-                    }
-                    cir.setReturnValue(stack);
-                    return;
-                }
-
-                // 催化剂
+                // 配方催化剂优先于普通物品过滤，避免 #forge:tools 等规则拦截合法催化剂。
                 boolean isCatalyst = com.huanghuang.SRfix.util.SRfixConfig.isConfiguredCatalyst(stack)
                         || AltarRecipe.CATALYST_CACHE.stream().anyMatch(ing -> ing.test(stack));
                 if (isCatalyst) {
@@ -302,8 +286,25 @@ public abstract class AltarBlockEntityMixin extends PlatformBlockEntity implemen
                         if (recipe != null) this.handleSummoning(recipe, player);
                     }
                     this.huanghuang$sync();
-                    ItemStack rem = stack.copy(); rem.shrink(1);
+                    ItemStack rem = stack.copy();
+                    rem.shrink(1);
                     cir.setReturnValue(rem);
+                    return;
+                }
+
+                // 黑名单物品：当作空手处理（提取/召唤）
+                if (!com.huanghuang.SRfix.util.SRfixConfig.isAllowed(stack)) {
+                    if (player.isShiftKeyDown()) {
+                        this.inventory.popLastInserted();
+                        this.huanghuang$sync();
+                    } else if (!this.huanghuang$isAutoMode) {
+                        AltarRecipe recipe = this.findRecipe();
+                        if (recipe != null) {
+                            this.handleSummoning(recipe, player);
+                            this.huanghuang$sync();
+                        }
+                    }
+                    cir.setReturnValue(stack);
                     return;
                 }
 
