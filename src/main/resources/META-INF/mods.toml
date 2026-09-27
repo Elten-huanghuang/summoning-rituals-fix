@@ -9,9 +9,9 @@ license="${mod_license}"
 [[mods]]
 modId="srfix"  # 直接写你的 mod_id 实际值
 version="1.0.0"        # 直接写实际版本号
-displayName="Summoning Rituals Fix"
+displayName="Better Summoning Rituals"
 authors="huanghuang"
-description='''A fix and tweak mod for Summoning Rituals.'''
+description='''Better Summoning Rituals: fixes and tweaks for Summoning Rituals.'''
 
 # 基础依赖：这是你报错的地方，必须改成明确的字符串
 [[dependencies.srfix]]

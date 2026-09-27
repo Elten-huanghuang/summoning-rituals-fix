@@ -1,4 +1,4 @@
-## 🛠️ Summoning Rituals Fix (srfix) - 更新与修复说明
+## 🛠️ Better Summoning Rituals (srfix) - 更新与修复说明
 
 本模组是针对 **Summoning Rituals (召唤仪式)** 1.20.1 版本的专项优化补丁。
 
@@ -56,10 +56,21 @@ JSON
 {
   "enableDefaultWeaponFilter": true,
   "blacklist": [
+    "#forge:tools",
+    "#goety:wands",
+    "goety:dark_wand",
+    "irons_spellbooks:graybeard_staff",
+    "irons_spellbooks:artificer_cane",
+    "irons_spellbooks:ice_staff",
+    "irons_spellbooks:lightning_rod",
+    "irons_spellbooks:blood_staff",
     "minecraft:nether_star"
   ],
   "whitelist": [
     "minecraft:diamond_sword" 
+  ],
+  "catalysts": [
+    "touhou_little_maid:hakurei_gohei"
   ]
 }
 ```

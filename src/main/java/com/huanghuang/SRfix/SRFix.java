@@ -23,7 +23,7 @@ public class SRFix {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        LOGGER.info(">>> Summoning Rituals Fix 已经成功加载！");
+        LOGGER.info(">>> Better Summoning Rituals 已经成功加载！");
 
         event.enqueueWork(() -> {
             SRfixConfig.load();

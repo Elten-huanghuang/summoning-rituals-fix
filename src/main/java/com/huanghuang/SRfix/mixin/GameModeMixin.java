@@ -22,20 +22,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class GameModeMixin {
 
     @Unique
-    private static final Logger yuusha$LOGGER = LogUtils.getLogger();
+    private static final Logger huanghuang$LOGGER = LogUtils.getLogger();
 
     @Shadow @Final protected ServerPlayer player;
 
     @Inject(method = "handleBlockBreakAction", at = @At("HEAD"), cancellable = true)
-    private void yuusha$onLeftClickAltar(BlockPos pos, net.minecraft.network.protocol.game.ServerboundPlayerActionPacket.Action action, net.minecraft.core.Direction direction, int worldHeight, int sequence, CallbackInfo ci) {
+    private void huanghuang$onLeftClickAltar(BlockPos pos, net.minecraft.network.protocol.game.ServerboundPlayerActionPacket.Action action, net.minecraft.core.Direction direction, int worldHeight, int sequence, CallbackInfo ci) {
         try {
             if (action == net.minecraft.network.protocol.game.ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK && player.isShiftKeyDown()) {
                 BlockEntity be = player.level().getBlockEntity(pos);
                 if (be instanceof AltarBlockEntity altar) {
                     IAltarModeHolder holder = (IAltarModeHolder) altar;
-                    boolean newMode = !holder.yuusha$isAutoMode();
-                    holder.yuusha$setAutoMode(newMode);
-                    holder.yuusha$sync();
+                    boolean newMode = !holder.huanghuang$isAutoMode();
+                    holder.huanghuang$setAutoMode(newMode);
+                    holder.huanghuang$sync();
 
                     String modeName = newMode ? "全自动" : "手动";
                     player.displayClientMessage(Component.literal("祭坛模式: " + modeName).withStyle(ChatFormatting.GOLD), true);
@@ -43,7 +43,7 @@ public abstract class GameModeMixin {
                 }
             }
         } catch (Exception e) {
-            yuusha$LOGGER.error("[SRfix] Failed to handle altar mode switch at {}", pos, e);
+            huanghuang$LOGGER.error("[SRfix] Failed to handle altar mode switch at {}", pos, e);
         }
     }
 }
