@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
 import java.util.Optional;
+import java.util.List;
 
 @Mixin(value = AltarBlockEntity.class, priority = 10000)
 public abstract class AltarBlockEntityMixin extends PlatformBlockEntity implements IAltarModeHolder {
@@ -241,6 +242,34 @@ public abstract class AltarBlockEntityMixin extends PlatformBlockEntity implemen
         }
     }
 
+    /**
+     * A catalyst item can also be a normal input for another recipe. Once a
+     * catalyst is already selected, use the recipes for that catalyst to
+     * decide whether a blacklisted item is a valid material instead of
+     * treating the global catalyst cache as a permanent item classification.
+     */
+    @Unique
+    private boolean huanghuang$isRecipeMaterial(ItemStack stack) {
+        if (stack.isEmpty() || this.level == null) return false;
+
+        ItemStack selectedCatalyst = this.inventory.getCatalyst();
+        if (selectedCatalyst.isEmpty()) return false;
+
+        try {
+            RecipeType<AltarRecipe> type = Registration.ALTAR_RECIPE.type().get();
+            List<AltarRecipe> recipes = this.level.getRecipeManager().getAllRecipesFor(type);
+            for (AltarRecipe recipe : recipes) {
+                if (!recipe.getCatalyst().test(selectedCatalyst)) continue;
+                if (recipe.getInputs().stream().anyMatch(input -> input.ingredient().test(stack))) {
+                    return true;
+                }
+            }
+        } catch (RuntimeException e) {
+            huanghuang$LOGGER.warn("[SRfix] Failed checking recipe material for {}", stack, e);
+        }
+        return false;
+    }
+
     // ==================== 玩家交互（插入/抽取） ====================
 
     @Inject(method = "handleInteraction", at = @At("HEAD"), cancellable = true, remap = false)
@@ -272,8 +301,13 @@ public abstract class AltarBlockEntityMixin extends PlatformBlockEntity implemen
             // ---- 手持物品 ----
             else {
                 // 配方催化剂优先于普通物品过滤，避免 #forge:tools 等规则拦截合法催化剂。
-                boolean isCatalyst = com.huanghuang.SRfix.util.SRfixConfig.isConfiguredCatalyst(stack)
-                        || AltarRecipe.CATALYST_CACHE.stream().anyMatch(ing -> ing.test(stack));
+                // Catalyst candidates are only routed to the catalyst slot
+                // while that slot is empty. If a catalyst is already selected,
+                // the same item may legitimately be a normal input for the
+                // selected recipe (or another recipe using that catalyst).
+                boolean isCatalyst = this.inventory.getCatalyst().isEmpty()
+                        && (com.huanghuang.SRfix.util.SRfixConfig.isConfiguredCatalyst(stack)
+                        || AltarRecipe.CATALYST_CACHE.stream().anyMatch(ing -> ing.test(stack)));
                 if (isCatalyst) {
                     if (!this.inventory.getCatalyst().isEmpty()) {
                         cir.setReturnValue(stack);
@@ -293,7 +327,8 @@ public abstract class AltarBlockEntityMixin extends PlatformBlockEntity implemen
                 }
 
                 // 黑名单物品：当作空手处理（提取/召唤）
-                if (!com.huanghuang.SRfix.util.SRfixConfig.isAllowed(stack)) {
+                boolean recipeMaterial = huanghuang$isRecipeMaterial(stack);
+                if (!recipeMaterial && !com.huanghuang.SRfix.util.SRfixConfig.isAllowed(stack)) {
                     if (player.isShiftKeyDown()) {
                         this.inventory.popLastInserted();
                         this.huanghuang$sync();
